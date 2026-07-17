@@ -1,0 +1,59 @@
+name: Poll Ingresso IMAX sessions
+
+on:
+  # Fires every 5 minutes. main.py applies the time-aware cadence gate
+  # (Mon-Wed ~20min, Thu ~15min, Fri-Sun hourly, reckoned in São Paulo time),
+  # so most runs exit in seconds without hitting the API.
+  schedule:
+    - cron: "*/5 * * * *"
+  # Manual trigger. Set "force" to poll immediately, bypassing the gate.
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force a poll now (ignore cadence gate)"
+        type: boolean
+        default: true
+
+# Allow the job to push the updated state.json back to the repo.
+permissions:
+  contents: write
+
+# Never run two pollers at once (they'd race on the state commit).
+concurrency:
+  group: ingresso-poller
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Poll for new IMAX sessions
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FORCE_POLL: ${{ github.event_name == 'workflow_dispatch' && inputs.force && '1' || '' }}
+        run: python main.py
+
+      - name: Commit updated state
+        run: |
+          if [[ -n "$(git status --porcelain state.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add state.json
+            git commit -m "chore: update session state [skip ci]"
+            # Rebase-pull in case a manual run committed meanwhile, then push.
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || true
+            git push
+          else
+            echo "No state change to commit."
+          fi
