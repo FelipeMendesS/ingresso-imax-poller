@@ -51,10 +51,10 @@ REQUEST_JITTER_SECONDS = (0.5, 3.0)
 
 # --- Polling cadence ---------------------------------------------------------
 # Brazilian cinema weeks refresh Thursday; new sessions often load Mon-Wed.
-# The GitHub Actions cron fires every 5 minutes (see .github/workflows/poll.yml);
-# main.py then decides whether enough time has elapsed to actually poll, based
-# on the *São Paulo local* weekday. This keeps the cadence correct regardless
-# of UTC/timezone day boundaries.
+# A local cron job fires every 5 minutes (see scripts/run_local.sh); main.py
+# then decides whether enough time has elapsed to actually poll, based on the
+# *São Paulo local* weekday. This keeps the cadence correct regardless of
+# UTC/timezone day boundaries.
 #
 # Python weekday(): Monday=0 ... Sunday=6.
 POLL_INTERVAL_MINUTES = {

@@ -3,3 +3,5 @@ __pycache__/
 .venv/
 venv/
 .env
+poll.log
+.run_local.lock

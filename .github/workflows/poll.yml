@@ -1,11 +1,12 @@
 name: Poll Ingresso IMAX sessions
 
 on:
-  # Fires every 5 minutes. main.py applies the time-aware cadence gate
-  # (Mon-Wed ~20min, Thu ~15min, Fri-Sun hourly, reckoned in São Paulo time),
-  # so most runs exit in seconds without hitting the API.
-  schedule:
-    - cron: "*/5 * * * *"
+  # No schedule trigger: the poller now runs from a local cron job (see
+  # scripts/run_local.sh and README.md "Running on your own machine") so it
+  # isn't subject to GitHub Actions' best-effort scheduling, which can delay
+  # or drop */5 cron ticks under load. This workflow stays as a manual
+  # fallback for whenever the local machine is off.
+  #
   # Manual trigger. Set "force" to poll immediately, bypassing the gate.
   workflow_dispatch:
     inputs:
