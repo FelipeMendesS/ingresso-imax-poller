@@ -40,6 +40,18 @@ def _local_now():
     return _now_utc().astimezone(timezone(timedelta(hours=-3)))
 
 
+def _in_heartbeat_quiet_hours():
+    """True if the current São Paulo hour falls in the heartbeat quiet window."""
+    start = getattr(config, "HEARTBEAT_QUIET_START_HOUR", None)
+    end = getattr(config, "HEARTBEAT_QUIET_END_HOUR", None)
+    if start is None or end is None:
+        return False
+    hour = _local_now().hour
+    if start < end:
+        return start <= hour < end
+    return hour >= start or hour < end  # window wraps past midnight
+
+
 def _elapsed_seconds(iso_ts):
     """Seconds since an ISO timestamp; a huge number if missing/unparseable."""
     if not iso_ts:
@@ -177,7 +189,11 @@ def run(force=False, dry_run=False):
 
         # Heartbeat: hourly proof-of-life ping. Skips (but resets the clock) if a
         # real alert already went out this run.
-        if config.SEND_HEARTBEAT:
+        if config.SEND_HEARTBEAT and _in_heartbeat_quiet_hours() and not force:
+            # Sleep window: don't ping, and don't reset the clock — that way the
+            # first heartbeat right after the quiet window fires promptly.
+            print("[heartbeat] quiet hours (22:00-08:00 SP) -> suppressed")
+        elif config.SEND_HEARTBEAT:
             hb_elapsed = _elapsed_seconds(state.get("last_heartbeat"))
             hb_threshold = (config.HEARTBEAT_INTERVAL_MINUTES * 60
                             - config.POLL_TOLERANCE_SECONDS)
