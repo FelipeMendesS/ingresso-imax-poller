@@ -78,3 +78,12 @@ STATE_FILE = "state.json"
 # On the very first run (empty state) we seed all currently-listed sessions as
 # "seen" and send ONE summary instead of spamming an alert per existing session.
 SEND_STARTUP_SUMMARY = True
+
+# --- Heartbeat ---------------------------------------------------------------
+# Proof-of-life: send a Telegram ping on a fixed interval even when nothing
+# changed, so that if the pings ever stop you know the bot died (silence = alarm).
+# It piggybacks on the regular poll (which fires at least hourly on every day),
+# so it costs no extra API calls. If a real "on sale" alert already went out in
+# the same run, the heartbeat is skipped for that hour (the alert proves life).
+SEND_HEARTBEAT = True
+HEARTBEAT_INTERVAL_MINUTES = 60

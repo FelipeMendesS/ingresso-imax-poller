@@ -40,16 +40,30 @@ def _local_now():
     return _now_utc().astimezone(timezone(timedelta(hours=-3)))
 
 
+def _elapsed_seconds(iso_ts):
+    """Seconds since an ISO timestamp; a huge number if missing/unparseable."""
+    if not iso_ts:
+        return float("inf")
+    try:
+        dt = datetime.fromisoformat(iso_ts)
+    except ValueError:
+        return float("inf")
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return (_now_utc() - dt).total_seconds()
+
+
 def load_state():
     path = config.STATE_FILE
     if not os.path.exists(path):
-        return {"last_checked": None, "sessions": {}}
+        return {"last_checked": None, "last_heartbeat": None, "sessions": {}}
     try:
         with open(path, "r", encoding="utf-8") as fh:
             data = json.load(fh)
     except (ValueError, OSError):
-        return {"last_checked": None, "sessions": {}}
+        return {"last_checked": None, "last_heartbeat": None, "sessions": {}}
     data.setdefault("last_checked", None)
+    data.setdefault("last_heartbeat", None)
     data.setdefault("sessions", {})
     return data
 
@@ -143,19 +157,39 @@ def run(force=False, dry_run=False):
     first_run = not stored
     to_alert = [] if first_run else sessions_to_alert(sessions, stored)
 
+    alerts_sent = False
     if first_run:
         on_sale = sum(1 for s in sessions if s["available"])
         print("[diff] first run -> seeding %d session(s) (%d on sale), no alerts"
               % (len(sessions), on_sale))
         if config.SEND_STARTUP_SUMMARY and not dry_run:
             notify.notify_startup_summary(sessions)
+        # The summary is itself a proof-of-life; start the heartbeat clock now.
+        state["last_heartbeat"] = _now_utc().isoformat()
     else:
         print("[diff] %d session(s) newly on sale" % len(to_alert))
         for s in to_alert:
             print("   ON SALE  %s %s %s" % (s["date"], s["time"], s["room"]))
         if to_alert and not dry_run:
             sent = notify.notify_new_sessions(to_alert)
+            alerts_sent = True
             print("[notify] sent %d Telegram message(s)" % sent)
+
+        # Heartbeat: hourly proof-of-life ping. Skips (but resets the clock) if a
+        # real alert already went out this run.
+        if config.SEND_HEARTBEAT:
+            hb_elapsed = _elapsed_seconds(state.get("last_heartbeat"))
+            hb_threshold = (config.HEARTBEAT_INTERVAL_MINUTES * 60
+                            - config.POLL_TOLERANCE_SECONDS)
+            if force or hb_elapsed >= hb_threshold:
+                if alerts_sent:
+                    print("[heartbeat] due, but alert already sent -> skip, reset clock")
+                elif not dry_run:
+                    notify.notify_heartbeat(sessions)
+                    print("[heartbeat] sent proof-of-life ping")
+                else:
+                    print("[heartbeat] dry-run: would send ping")
+                state["last_heartbeat"] = _now_utc().isoformat()
 
     # Persist snapshot + timestamp (even when nothing changed, to advance the
     # cadence clock).

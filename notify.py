@@ -112,6 +112,20 @@ def notify_startup_summary(sessions, watch=None):
     _send("✅ <b>%s</b>\n\n%s" % (header, body))
 
 
+def notify_heartbeat(sessions, watch=None):
+    """Proof-of-life ping: bot is running, no new sessions on sale right now."""
+    watch = watch or config.WATCH
+    header = _escape(watch.get("label", "IMAX watch"))
+    total = len(sessions)
+    on_sale = sum(1 for s in sessions if s.get("available"))
+    body = (
+        "💓 Bot no ar — sem novas sessões IMAX à venda por enquanto.\n"
+        "Monitorando %d sessão(ões), %d à venda agora.\n"
+        "Te aviso na hora que abrir uma nova. 🎬" % (total, on_sale)
+    )
+    _send("💓 <b>%s</b>\n\n%s" % (header, body))
+
+
 def send_raw(text):
     """Escape-hatch for ad-hoc messages (used by --test)."""
     return _send(_escape(text))
