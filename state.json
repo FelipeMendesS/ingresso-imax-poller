@@ -1,14 +1,7 @@
 {
-  "last_checked": "2026-07-23T00:59:15.794486+00:00",
+  "last_checked": "2026-07-23T01:20:05.383201+00:00",
   "last_heartbeat": "2026-07-23T00:59:15.794427+00:00",
   "sessions": {
-    "85403495": {
-      "alerted": false,
-      "available": false,
-      "date": "2026-07-22",
-      "room": "Sala 1 - IMAX",
-      "time": "21:45"
-    },
     "85943150": {
       "alerted": true,
       "available": true,
@@ -53,7 +46,7 @@
     },
     "85943158": {
       "alerted": true,
-      "available": true,
+      "available": false,
       "date": "2026-07-24",
       "room": "Sala 1 - IMAX",
       "time": "18:15"
@@ -67,7 +60,7 @@
     },
     "85943161": {
       "alerted": true,
-      "available": true,
+      "available": false,
       "date": "2026-07-25",
       "room": "Sala 1 - IMAX",
       "time": "10:45"
