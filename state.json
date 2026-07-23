@@ -1,5 +1,5 @@
 {
-  "last_checked": "2026-07-23T03:55:03.337062+00:00",
+  "last_checked": "2026-07-23T04:00:04.861498+00:00",
   "last_heartbeat": "2026-07-23T00:59:15.794427+00:00",
   "sessions": {
     "85943150": {
@@ -137,7 +137,7 @@
     },
     "85953949": {
       "alerted": true,
-      "available": true,
+      "available": false,
       "date": "2026-07-24",
       "room": "Sala 1 - IMAX",
       "time": "14:30"
