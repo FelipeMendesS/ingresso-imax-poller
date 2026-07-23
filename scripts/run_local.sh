@@ -18,13 +18,27 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR"
 
+# Portable ISO-8601 timestamp. BSD/macOS `date` has no `-Is`, so build it
+# explicitly; this format works identically on macOS and GNU/Linux.
+ts() { date +%Y-%m-%dT%H:%M:%S%z; }
+
 # Skip this tick if a previous run is still in flight (e.g. a slow git push),
-# same protection the GitHub Actions concurrency group gave us.
-exec 200>"$REPO_DIR/.run_local.lock"
-if ! flock -n 200; then
-    echo "$(date -Is) [skip] previous run still in progress"
-    exit 0
+# same protection the GitHub Actions concurrency group gave us. Uses an atomic
+# `mkdir` lock rather than `flock`, which isn't available on stock macOS.
+LOCK_DIR="$REPO_DIR/.run_local.lock.d"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    # `mkdir` locks don't auto-release on crash like `flock` does. If the lock
+    # is stale (left by a run that died more than 15 minutes ago), remove it and
+    # retry; otherwise a previous run really is still in flight, so skip.
+    if [[ -n "$(find "$LOCK_DIR" -maxdepth 0 -mmin +15 2>/dev/null)" ]]; then
+        rmdir "$LOCK_DIR" 2>/dev/null || true
+    fi
+    if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+        echo "$(ts) [skip] previous run still in progress"
+        exit 0
+    fi
 fi
+trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
 
 if [[ -x "$REPO_DIR/.venv/bin/python3" ]]; then
     PYTHON="$REPO_DIR/.venv/bin/python3"
@@ -55,7 +69,7 @@ if [[ -n "$(git status --porcelain state.json)" ]]; then
     git commit -m "chore: update session state [skip ci]" >/dev/null
     git pull --rebase --autostash origin "$BRANCH" || true
     git push origin "$BRANCH"
-    echo "$(date -Is) [state] committed and pushed"
+    echo "$(ts) [state] committed and pushed"
 else
-    echo "$(date -Is) [state] no change to commit"
+    echo "$(ts) [state] no change to commit"
 fi

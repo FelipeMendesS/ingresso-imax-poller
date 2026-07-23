@@ -89,7 +89,8 @@ SEND_HEARTBEAT = True
 HEARTBEAT_INTERVAL_MINUTES = 60
 # Quiet hours (São Paulo local, LOCAL_TZ): no heartbeat between these hours so
 # it doesn't ping you while you sleep. Window wraps past midnight when start >
-# end. 22 -> 8 means silent from 10 PM to 8 AM. Real on-sale alerts are NOT
-# affected — those always fire. Set HEARTBEAT_QUIET_START_HOUR = None to disable.
-HEARTBEAT_QUIET_START_HOUR = 22
+# end. 0 -> 8 means silent from midnight to 8 AM, so the last nightly heartbeat
+# lands in the 11 PM hour. Real on-sale alerts are NOT affected — those always
+# fire. Set HEARTBEAT_QUIET_START_HOUR = None to disable.
+HEARTBEAT_QUIET_START_HOUR = 0
 HEARTBEAT_QUIET_END_HOUR = 8

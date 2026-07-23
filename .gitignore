@@ -5,3 +5,4 @@ venv/
 .env
 poll.log
 .run_local.lock
+.run_local.lock.d/
