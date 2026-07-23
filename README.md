@@ -134,6 +134,24 @@ changed — so your git history keeps recording every real poll, same as before.
 **Requirements:** the machine is on and networked whenever you want it
 polling; `git`, `python3`, and `cron` are already the norm on Linux/macOS.
 
+### Quick start (recommended)
+
+```bash
+git clone git@github.com:felipemendess/ingresso-imax-poller.git
+cd ingresso-imax-poller
+./scripts/bootstrap_local.sh
+```
+
+`scripts/bootstrap_local.sh` does steps 1-6 below for you: creates the venv,
+installs deps, prompts for your Telegram bot token/chat id (writes `.env`),
+checks `git push` actually works before you rely on it, installs the `*/5`
+crontab entry (safe to re-run — won't duplicate it), and does one smoke-test
+run so you see it working end to end. It only requires you to have already
+set up SSH/credentials so `git push` works unattended — that part can't be
+scripted since it depends on your key/token setup.
+
+### Manual steps (what the script above automates)
+
 1. **Clone the repo and set up Python:**
 
    ```bash
