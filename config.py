@@ -61,7 +61,7 @@ POLL_INTERVAL_MINUTES = {
     0: 20,   # Monday
     1: 20,   # Tuesday
     2: 20,   # Wednesday
-    3: 15,   # Thursday  (new week drops)
+    3: 5,    # Thursday  (new week drops — poll as fast as the 5-min cron allows)
     4: 60,   # Friday
     5: 60,   # Saturday
     6: 60,   # Sunday
