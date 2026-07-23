@@ -1,5 +1,5 @@
 {
-  "last_checked": "2026-07-23T17:20:03.731171+00:00",
+  "last_checked": "2026-07-23T17:28:50.459982+00:00",
   "last_heartbeat": "2026-07-23T17:00:05.568770+00:00",
   "sessions": {
     "85943150": {
@@ -183,6 +183,153 @@
       "date": "2026-07-28",
       "room": "Sala 1 - IMAX",
       "time": "10:45"
+    },
+    "86073180": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-04",
+      "room": "Sala 1 - IMAX",
+      "time": "14:30"
+    },
+    "86073181": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-07-31",
+      "room": "Sala 1 - IMAX",
+      "time": "18:15"
+    },
+    "86073182": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-01",
+      "room": "Sala 1 - IMAX",
+      "time": "14:30"
+    },
+    "86073183": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-05",
+      "room": "Sala 1 - IMAX",
+      "time": "22:00"
+    },
+    "86073190": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-01",
+      "room": "Sala 1 - IMAX",
+      "time": "18:15"
+    },
+    "86073196": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-02",
+      "room": "Sala 1 - IMAX",
+      "time": "10:45"
+    },
+    "86073210": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-07-31",
+      "room": "Sala 1 - IMAX",
+      "time": "22:00"
+    },
+    "86073212": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-05",
+      "room": "Sala 1 - IMAX",
+      "time": "14:30"
+    },
+    "86073213": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-02",
+      "room": "Sala 1 - IMAX",
+      "time": "14:30"
+    },
+    "86073214": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-07-30",
+      "room": "Sala 1 - IMAX",
+      "time": "10:45"
+    },
+    "86073215": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-07-30",
+      "room": "Sala 1 - IMAX",
+      "time": "18:15"
+    },
+    "86073216": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-01",
+      "room": "Sala 1 - IMAX",
+      "time": "22:00"
+    },
+    "86073217": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-07-30",
+      "room": "Sala 1 - IMAX",
+      "time": "22:00"
+    },
+    "86073218": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-04",
+      "room": "Sala 1 - IMAX",
+      "time": "18:15"
+    },
+    "86073221": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-07-31",
+      "room": "Sala 1 - IMAX",
+      "time": "10:45"
+    },
+    "86073222": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-05",
+      "room": "Sala 1 - IMAX",
+      "time": "18:15"
+    },
+    "86073225": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-02",
+      "room": "Sala 1 - IMAX",
+      "time": "22:00"
+    },
+    "86073227": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-07-30",
+      "room": "Sala 1 - IMAX",
+      "time": "14:30"
+    },
+    "86073228": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-02",
+      "room": "Sala 1 - IMAX",
+      "time": "18:15"
+    },
+    "86073229": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-07-31",
+      "room": "Sala 1 - IMAX",
+      "time": "14:30"
+    },
+    "86073231": {
+      "alerted": true,
+      "available": true,
+      "date": "2026-08-04",
+      "room": "Sala 1 - IMAX",
+      "time": "22:00"
     }
   }
 }
