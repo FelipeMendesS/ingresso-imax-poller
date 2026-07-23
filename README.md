@@ -5,19 +5,29 @@ sessions at **Cinépolis JK Iguatemi (São Paulo)** and sends a **Telegram**
 alert — with a direct buy link — the moment new sessions appear, so you can
 grab good seats within minutes of a weekly batch dropping.
 
-Runs entirely on **GitHub Actions** (free) on a time-aware cron. State is
-committed back to the repo between runs, so there's no server or database.
+Runs on a time-aware cron, driven by **a local cron job on a machine you
+control** (recommended — see below), with **GitHub Actions** kept as a manual
+fallback. State is committed back to the repo between runs, so there's no
+server or database.
+
+> **Why not GitHub Actions cron?** GitHub's scheduled workflows are
+> best-effort — under load, `*/5` ticks get delayed or dropped, sometimes by
+> an hour or more, which shows up as an "hourly" heartbeat arriving every
+> 70-90 minutes. A cron job on your own always-on machine fires on time.
 
 ## How it works
 
 ```
-GitHub Actions cron (every 5 min)
-   └─ main.py
-        ├─ cadence gate   → poll only if enough time elapsed for today (SP time)
-        ├─ fetcher.py     → Ingresso JSON API → filter to A Odisseia + IMAX
-        ├─ diff vs state.json  → new sessions? sold-out session reopened?
-        ├─ notify.py      → Telegram message per new/reopened session
-        └─ save state.json → committed back to the repo
+cron (every 5 min, local machine or GitHub Actions manual run)
+   └─ scripts/run_local.sh
+        ├─ git pull --rebase   → pick up state committed elsewhere
+        ├─ main.py
+        │    ├─ cadence gate   → poll only if enough time elapsed for today (SP time)
+        │    ├─ fetcher.py     → Ingresso JSON API → filter to A Odisseia + IMAX
+        │    ├─ diff vs state.json  → new sessions? sold-out session reopened?
+        │    ├─ notify.py      → Telegram message per new/reopened session
+        │    └─ save state.json
+        └─ git commit + push state.json (if it changed)
 ```
 
 It uses Ingresso's **undocumented JSON content API** (the same one the website
@@ -43,8 +53,9 @@ link (`siteURL`). Verified live against the API and cross-checked with the
 | `notify.py` | Sends Telegram messages. |
 | `main.py` | Orchestrates gate → fetch → diff → notify → save. |
 | `discover_ids.py` | One-time helper to find city / theater / film IDs. |
-| `state.json` | Seen sessions + last-checked timestamp (committed by CI). |
-| `.github/workflows/poll.yml` | The cron schedule + runner. |
+| `state.json` | Seen sessions + last-checked timestamp (committed after every poll). |
+| `scripts/run_local.sh` | Cron entrypoint: pulls, runs `main.py`, commits + pushes `state.json` if it changed. |
+| `.github/workflows/poll.yml` | Manual-run fallback (`workflow_dispatch` only — no schedule). |
 
 ## Setup
 
@@ -73,7 +84,7 @@ gh repo create ingresso-imax-poller --private --source=. --push
    `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates` in a browser and read
    `result[].message.chat.id`. (Or message **@userinfobot**.)
 
-### 3. Add GitHub repo secrets
+### 3. Add GitHub repo secrets (for the manual-run fallback)
 
 Repo → **Settings → Secrets and variables → Actions → New repository secret**:
 
@@ -81,6 +92,11 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 |--------|-------|
 | `TELEGRAM_BOT_TOKEN` | the token from BotFather |
 | `TELEGRAM_CHAT_ID` | your chat ID |
+
+These are only used if you trigger the workflow manually (**Actions → Run
+workflow**) — e.g. as a fallback when your local machine is off. The
+always-on poller (below) reads the same credentials from a local `.env` file
+instead.
 
 ### 4. (Optional) Verify / rediscover the IDs
 
@@ -96,19 +112,119 @@ python discover_ids.py --uf RJ --city "Rio de Janeiro" --partnership cinemark --
 
 Paste the printed IDs into the `WATCH` block in `config.py`.
 
-### 5. Turn it on
+### 5. Set up the always-on poller (your own machine)
 
-The workflow runs automatically once pushed. To test immediately:
+This is the recommended way to run it — see "Running on your own machine"
+below. It replaces GitHub's unreliable scheduled cron with a real one.
 
-- Repo → **Actions → Poll Ingresso IMAX sessions → Run workflow**
-  (with **force** checked). The first run seeds current sessions and sends a
-  one-off summary; after that you're only alerted on **new** or **reopened**
-  sessions.
+To test the pipeline immediately without waiting on any cron, you can also
+run **Actions → Poll Ingresso IMAX sessions → Run workflow** (with **force**
+checked) once. The first run (from either place) seeds current sessions and
+sends a one-off summary; after that you're only alerted on **new** or
+**reopened** sessions.
+
+## Running on your own machine
+
+A local cron job is more reliable than GitHub Actions' scheduled trigger,
+which can silently delay or drop `*/5` ticks under load (see "Why not GitHub
+Actions cron?" above). `scripts/run_local.sh` reproduces exactly what the
+Actions workflow used to do — poll, then commit + push `state.json` if it
+changed — so your git history keeps recording every real poll, same as before.
+
+**Requirements:** the machine is on and networked whenever you want it
+polling; `git`, `python3`, and `cron` are already the norm on Linux/macOS.
+
+### Quick start (recommended)
+
+```bash
+git clone git@github.com:felipemendess/ingresso-imax-poller.git
+cd ingresso-imax-poller
+./scripts/bootstrap_local.sh
+```
+
+`scripts/bootstrap_local.sh` does steps 1-6 below for you: creates the venv,
+installs deps, prompts for your Telegram bot token/chat id (writes `.env`),
+checks `git push` actually works before you rely on it, installs the `*/5`
+crontab entry (safe to re-run — won't duplicate it), and does one smoke-test
+run so you see it working end to end. It only requires you to have already
+set up SSH/credentials so `git push` works unattended — that part can't be
+scripted since it depends on your key/token setup.
+
+### Manual steps (what the script above automates)
+
+1. **Clone the repo and set up Python:**
+
+   ```bash
+   git clone git@github.com:felipemendess/ingresso-imax-poller.git
+   cd ingresso-imax-poller
+   python3 -m venv .venv
+   .venv/bin/pip install -r requirements.txt
+   ```
+
+2. **Make sure `git push` works unattended.** Clone over SSH with a key that
+   has push access and no passphrase prompt (or a credential helper that
+   caches a PAT), and set your identity if this machine hasn't got one:
+
+   ```bash
+   git config user.name "Your Name"
+   git config user.email "you@example.com"
+   ```
+
+3. **Create a local `.env`** (already gitignored — never commit it) with your
+   Telegram credentials:
+
+   ```bash
+   cat > .env <<'EOF'
+   TELEGRAM_BOT_TOKEN=123456789:AA...
+   TELEGRAM_CHAT_ID=your_chat_id
+   EOF
+   ```
+
+4. **Test it manually once:**
+
+   ```bash
+   ./scripts/run_local.sh
+   cat poll.log 2>/dev/null   # nothing yet — this prints straight to stdout when run by hand
+   ```
+
+   You should see the same `[gate]`/`[fetch]`/`[diff]` lines `main.py` prints
+   normally, and a `git push` if `state.json` changed.
+
+5. **Install the cron job** — every 5 minutes, matching the cadence
+   `main.py`'s own gate expects:
+
+   ```bash
+   crontab -e
+   ```
+
+   Add (adjusting the path to where you cloned the repo):
+
+   ```
+   */5 * * * * /home/you/ingresso-imax-poller/scripts/run_local.sh >> /home/you/ingresso-imax-poller/poll.log 2>&1
+   ```
+
+6. **(Optional) Rotate the log** so `poll.log` doesn't grow forever:
+
+   ```bash
+   sudo tee /etc/logrotate.d/ingresso-imax-poller >/dev/null <<'EOF'
+   /home/you/ingresso-imax-poller/poll.log {
+       weekly
+       rotate 4
+       compress
+       missingok
+       notifempty
+   }
+   EOF
+   ```
+
+That's it — `crontab -l` to confirm it's installed, and `tail -f poll.log` to
+watch it run. `state.json` commits will start showing up in the repo's
+history from your machine instead of `github-actions[bot]`.
 
 ## Polling cadence
 
 Brazilian cinema weeks refresh **Thursday**, and new sessions often load
-Mon–Wed. The cron fires every 5 minutes; `main.py` then decides whether to
+Mon–Wed. Cron fires every 5 minutes; `main.py` then decides whether to
 actually poll based on the **São Paulo local weekday**:
 
 | Days (SP local) | Interval |
@@ -118,8 +234,9 @@ actually poll based on the **São Paulo local weekday**:
 | Fri–Sun | ~60 min |
 
 Deciding cadence in code (not purely in cron) keeps it correct across the
-UTC↔SP day boundary and absorbs GitHub's scheduling jitter. Change the
-intervals in `config.py` (`POLL_INTERVAL_MINUTES`).
+UTC↔SP day boundary and absorbs a few minutes of scheduling jitter from
+whichever cron is driving it. Change the intervals in `config.py`
+(`POLL_INTERVAL_MINUTES`).
 
 ## Alerts
 
@@ -171,7 +288,12 @@ Use `discover_ids.py` to find new IDs. Nothing else needs to change.
   without notice. The fetcher sends a normal browser User-Agent and small random
   jitter to be polite. If sessions stop being found, re-run `discover_ids.py` —
   the film ID changes between runs/weeks.
-- **Scheduled workflows can be delayed** by GitHub under load; the elapsed-time
-  gate handles this gracefully (it polls whenever enough time has passed).
-- GitHub disables cron on repos with 60 days of no activity — moot here since
-  the poller commits `state.json` on every change.
+- **The GitHub Actions schedule is intentionally off** (see "Why not GitHub
+  Actions cron?" above) — `.github/workflows/poll.yml` only has
+  `workflow_dispatch` now, as a manual fallback. The local cron in "Running on
+  your own machine" is the primary poller. If you ever want Actions-only
+  again, re-add a `schedule:` block, but expect the same jitter this setup
+  was built to avoid.
+- If your machine is offline for a stretch, the elapsed-time gate handles it
+  gracefully either way (it polls whenever enough time has passed once it's
+  back).

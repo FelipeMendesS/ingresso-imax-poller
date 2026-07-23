@@ -1,10 +1,12 @@
 """Orchestrate: decide whether to poll -> fetch -> diff -> notify -> save state.
 
-Run by GitHub Actions every 5 minutes. The cadence gate (based on São Paulo
-local weekday) means most invocations exit early without touching the API.
+Invoked every 5 minutes by a local cron job (scripts/run_local.sh) rather than
+GitHub Actions' scheduled cron, which is best-effort and can delay or drop
+ticks under load. The cadence gate (based on São Paulo local weekday) means
+most invocations exit early without touching the API.
 
 Exit codes: always 0 on normal operation (including "skipped" and "no
-changes") so the workflow's commit step runs cleanly. Non-zero only on an
+changes") so the caller's commit step runs cleanly. Non-zero only on an
 unexpected error.
 """
 

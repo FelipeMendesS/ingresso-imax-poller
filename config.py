@@ -51,17 +51,17 @@ REQUEST_JITTER_SECONDS = (0.5, 3.0)
 
 # --- Polling cadence ---------------------------------------------------------
 # Brazilian cinema weeks refresh Thursday; new sessions often load Mon-Wed.
-# The GitHub Actions cron fires every 5 minutes (see .github/workflows/poll.yml);
-# main.py then decides whether enough time has elapsed to actually poll, based
-# on the *São Paulo local* weekday. This keeps the cadence correct regardless
-# of UTC/timezone day boundaries.
+# A local cron job fires every 5 minutes (see scripts/run_local.sh); main.py
+# then decides whether enough time has elapsed to actually poll, based on the
+# *São Paulo local* weekday. This keeps the cadence correct regardless of
+# UTC/timezone day boundaries.
 #
 # Python weekday(): Monday=0 ... Sunday=6.
 POLL_INTERVAL_MINUTES = {
     0: 20,   # Monday
     1: 20,   # Tuesday
     2: 20,   # Wednesday
-    3: 15,   # Thursday  (new week drops)
+    3: 5,    # Thursday  (new week drops — poll as fast as the 5-min cron allows)
     4: 60,   # Friday
     5: 60,   # Saturday
     6: 60,   # Sunday
@@ -89,7 +89,10 @@ SEND_HEARTBEAT = True
 HEARTBEAT_INTERVAL_MINUTES = 60
 # Quiet hours (São Paulo local, LOCAL_TZ): no heartbeat between these hours so
 # it doesn't ping you while you sleep. Window wraps past midnight when start >
-# end. 22 -> 8 means silent from 10 PM to 8 AM. Real on-sale alerts are NOT
-# affected — those always fire. Set HEARTBEAT_QUIET_START_HOUR = None to disable.
-HEARTBEAT_QUIET_START_HOUR = 22
+# end. 23 -> 8 means silent from 11 PM to 8 AM: nothing fires once the local
+# hour hits 23, so the latest a heartbeat can arrive is 10:59 PM. (The gate is
+# hour-granular, so it can't allow 11:00 but block 11:57 — hence the cutoff is
+# the top of the 11 PM hour.) Real on-sale alerts are NOT affected — those
+# always fire. Set HEARTBEAT_QUIET_START_HOUR = None to disable.
+HEARTBEAT_QUIET_START_HOUR = 23
 HEARTBEAT_QUIET_END_HOUR = 8
